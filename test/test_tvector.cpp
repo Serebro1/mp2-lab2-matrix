@@ -31,11 +31,18 @@ TEST(TVector, can_create_copied_vector)
 
 TEST(TVector, copied_vector_is_equal_to_source_one)
 {
-  ADD_FAILURE();
+	TVector<int> a(10), b(10);
+	for (int i = 0; i < 10; i++)
+	{
+		a[i] = i + i;
+	}
+	ASSERT_NO_THROW(b = a);
+	EXPECT_EQ(a, b);
 }
 
 TEST(TVector, copied_vector_has_its_own_memory)
 {
+	// 1)изменить первый вектор а второй вектор, т.е. копия остаётся неизменной. 2)Или удалить первый то второй должен остаться
   ADD_FAILURE();
 }
 
