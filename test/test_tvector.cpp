@@ -31,24 +31,24 @@ TEST(TVector, can_create_copied_vector)
 
 TEST(TVector, copied_vector_is_equal_to_source_one)
 {
-	TVector<int> a(10), b(10);
+	TVector<int> a(10);
 	for (int i = 0; i < 10; i++)
 	{
 		a[i] = i + i;
 	}
-	b = a;
+	TVector<int> b(a);
 	EXPECT_EQ(a, b);
 }
 
 TEST(TVector, copied_vector_has_its_own_memory)
 {
 	// 1)изменить первый вектор а второй вектор, т.е. копия остаётся неизменной. 2)Или удалить первый то второй должен остаться
-	TVector<int> a(10), b(10);
+	TVector<int> a(10);
 	for (int i = 0; i < 10; i++)
 	{
 		a[i] = i + i;
 	}
-	b = a;
+	TVector<int> b(a);
 	for (int i = 0; i < 10; i++)
 	{
 		a[i] += i;
@@ -92,8 +92,14 @@ TEST(TVector, throws_when_set_element_with_too_large_index)
 
 TEST(TVector, can_assign_vector_to_itself)
 {
-	TVector<int> v(10);
-	ASSERT_NO_THROW(v = v);
+	const int size = 2;
+	TVector<int> v1(size), v2(size);
+	for (int i = 0; i < size; i++)
+	{
+		v1[i] = i;
+	}
+	ASSERT_NO_THROW(v1 = v1);
+
 }
 
 TEST(TVector, can_assign_vectors_of_equal_size)
@@ -105,7 +111,7 @@ TEST(TVector, can_assign_vectors_of_equal_size)
 		v1[i] = i;
 	}
 	ASSERT_NO_THROW(v2 = v1);
-	
+	EXPECT_EQ(v1, v2);
 }
 
 TEST(TVector, assign_operator_change_vector_size)
@@ -116,9 +122,10 @@ TEST(TVector, assign_operator_change_vector_size)
 	{
 		v1[i] = i;
 	}
-	v2 = v1;
+	ASSERT_NO_THROW(v2 = v1);
 
-	EXPECT_EQ(2, v2.GetSize());
+	EXPECT_EQ(size1, v2.GetSize());
+	EXPECT_EQ(v1, v2);
 }
 
 TEST(TVector, can_assign_vectors_of_different_size)
@@ -148,7 +155,7 @@ TEST(TVector, compare_equal_vectors_return_true)
 TEST(TVector, compare_vector_with_itself_return_true)
 {
 	const int size = 2;
-	TVector<int> v1(size), v2(size);
+	TVector<int> v1(size);
 	for (int i = 0; i < size; i++)
 	{
 		v1[i] = i;
@@ -211,8 +218,9 @@ TEST(TVector, can_add_vectors_with_equal_size)
 	{
 		v1[i] = i;
 		v2[i] = i + 5;
-		testv[i] = i + i + 5;
+		testv[i] = v1[i] + v2[i];
 	}
+	ASSERT_NO_THROW(v1 + v2);
 	EXPECT_EQ(v1 + v2, testv);
 }
 
@@ -231,8 +239,10 @@ TEST(TVector, can_subtract_vectors_with_equal_size)
 	{
 		v1[i] = i;
 		v2[i] = i + i;
+		testv[i] = v2[i] - v1[i];
 	}
 	ASSERT_NO_THROW(v2 - v1);
+	EXPECT_EQ(v2 - v1, testv);
 }
 
 TEST(TVector, cant_subtract_vectors_with_not_equal_size)
@@ -244,14 +254,18 @@ TEST(TVector, cant_subtract_vectors_with_not_equal_size)
 
 TEST(TVector, can_multiply_vectors_with_equal_size)
 {
-	const int size = 5;
-	TVector<int> v1(size), v2(size), testv(size);
+	const int size = 5, sz = 1;
+	TVector<int> v1(size), v2(size);
+	int test = 0;
 	for (int i = 0; i < size; i++)
 	{
 		v1[i] = i;
 		v2[i] = i * i;
+		test += v1[i] * v2[i];
 	}
+
 	ASSERT_NO_THROW(v2 * v1);
+	EXPECT_EQ(v2 * v1, test);
 }
 
 TEST(TVector, cant_multiply_vectors_with_not_equal_size)

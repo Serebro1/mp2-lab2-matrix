@@ -63,8 +63,8 @@ template <class T>
 TVector<T>::TVector(int s, int si)
 {
 	//Новый код
-	if (s<0 || s > MAX_VECTOR_SIZE || si < 0 || si > s - 1)
-		throw out_of_range("Wrong vector size or start index.");
+	if (s<0 || s > MAX_VECTOR_SIZE || si < 0)
+		throw -1;
 	Size = s;
 	StartIndex = si;
 	pVector = new T[Size];
@@ -93,9 +93,9 @@ template <class T> // доступ
 T& TVector<T>::operator[](int ind)
 {
 	// в неконстантных методах могут вызываться константные методы
-	if (ind < 0 || ind >= Size)
+	if (ind - this->GetStartIndex() < 0 || ind - this->GetStartIndex() >= Size)
 		throw out_of_range("Index out of range");
-	return pVector[ind]; // учесть startIndex
+	return pVector[ind - StartIndex]; // учесть startIndex
 } /*-------------------------------------------------------------------------*/
 
 template <class T> // сравнение
@@ -173,10 +173,12 @@ TVector<T> TVector<T>::operator+(const TVector<T> &v)
 {
 	if (Size != v.Size) throw - 1;
 	TVector tmp = TVector(Size);
-		for (int i = 0; i < Size; i++)
-		{
-			tmp.pVector[i] = pVector[i] + v.pVector[i];
-		}
+	tmp.StartIndex = StartIndex;
+	for (int i = 0; i < Size; i++)
+	{
+		tmp.pVector[i] = pVector[i] + v.pVector[i];
+		
+	}
 	return tmp;
 } /*-------------------------------------------------------------------------*/
 
@@ -185,10 +187,11 @@ TVector<T> TVector<T>::operator-(const TVector<T> &v)
 {
 	if (Size != v.Size) throw - 1;
 	TVector tmp = TVector(Size);
-		for (int i = 0; i < Size; i++)
-		{
-			tmp.pVector[i] = pVector[i] - v.pVector[i];
-		}
+	tmp.StartIndex = StartIndex;
+	for (int i = 0; i < Size; i++)
+	{
+		tmp.pVector[i] = pVector[i] - v.pVector[i];
+	}
 	return tmp;
 } /*-------------------------------------------------------------------------*/
 
@@ -205,7 +208,41 @@ T TVector<T>::operator*(const TVector<T> &v)
 } /*-------------------------------------------------------------------------*/
 
 
+
+// Реализация через агрегацию, где матрица - массив векторов
+template<class T>
+class ATMatrix {
+	int size;
+	TVector<T>* pMatrix;
+public:
+	ATMatrix(int s = 10);
+	TVector<T>& operator[](int ind);
+};
+
+template<class T>
+ATMatrix<T>::ATMatrix(int s)
+{
+	size = s;
+	pMatrix = new TVector<T>[size]; // size строк, и по-умолчанию столбцов
+	for (int i = 0; i < s; i++)
+	{
+		pMatrix[i] = TVector<T>(s - i, i);
+	}
+}
+
+template<class T>
+TVector<T>& ATMatrix<T>::operator[](int ind)
+{
+	if (ind <= 0 || ind >= size)
+		throw out_of_range("Index out of range");
+
+	return pMatrix[ind];
+}
+
+
 // Верхнетреугольная матрица
+// Реализация через наследование
+// задание. Написать оператор умножения матриц.
 template <class T>
 class TMatrix : public TVector<TVector<T> >
 {
@@ -237,6 +274,11 @@ public:
 template <class T>
 TMatrix<T>::TMatrix(int s): TVector<TVector<T> >(s)
 {
+	if (s >= MAX_MATRIX_SIZE || s < 0) throw - 1;
+	for (int i = 0; i < s; i++)
+	{
+		pVector[i] = TVector<T>(s - i, i);
+	}
 } /*-------------------------------------------------------------------------*/
 
 template <class T> // конструктор копирования
@@ -249,35 +291,50 @@ TMatrix<T>::TMatrix(const TVector<TVector<T> > &mt):
 
 template <class T> // сравнение
 bool TMatrix<T>::operator==(const TMatrix<T> &mt) const
-{
+{ // при создании матрицы startIndex будет 0 (он является потомком класса вектора)
+	if (Size != mt.Size) return false;
+	for (int i = 0; i < Size; i++) {
+		//if (*this[i] != mt[i]) return false;
+		if (this->pVector[i] != mt.pVector[i]) return false;
+	}
 	return true;
 } /*-------------------------------------------------------------------------*/
 
 template <class T> // сравнение
 bool TMatrix<T>::operator!=(const TMatrix<T> &mt) const
 {
-	return true;
+	return !(*this == mt);
 } /*-------------------------------------------------------------------------*/
 
 template <class T> // присваивание
 TMatrix<T>& TMatrix<T>::operator=(const TMatrix<T> &mt)
 {
+	if (this == &mt) return *this;
+	if (Size != mt.Size) {
+		delete[] pVector;
+		Size = mt.Size;
+		pVector = new TVector<T>[Size];
+	}
+	for (int i = 0; i < Size; i++)
+	{
+		pVector[i] = mt.pVector[i];
+	}
 	return *this;
 } /*-------------------------------------------------------------------------*/
 
 template <class T> // сложение
 TMatrix<T> TMatrix<T>::operator+(const TMatrix<T> &mt)
 {
-	return *this;
+	return TVector<TVector<T>>::operator+(mt);
 } /*-------------------------------------------------------------------------*/
 
 template <class T> // вычитание
 TMatrix<T> TMatrix<T>::operator-(const TMatrix<T> &mt)
 {
-	return *this;
-
+	return TVector <TVector<T>>::operator-(mt);
 } /*-------------------------------------------------------------------------*/
 
 // TVector О3 Л2 П4 С6
 // TMatrix О2 Л2 П3 С3
 #endif
+
